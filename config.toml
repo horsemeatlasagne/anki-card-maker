@@ -1,0 +1,16 @@
+# config.toml — committed; no secrets. See plan/plan.md Configuration section.
+
+[paths]
+vocab_db = "data/vocabulary_builder.sqlite3"
+langenscheidt = "data/dicts/de-de/Langenscheidt Großwörterbuch Deutsch als Fremdsprache (MDX)/Langenscheidt Großwörterbuch Deutsch als Fremdsprache.mdx"
+duden = "data/dicts/de-de/Duden Band 10 - Das Große Wörterbuch der deutschen Sprache.mdx"
+output = "out/cards.csv"
+cache = "out/llm_cache.json"
+
+[llm]
+base_url = "http://localhost:8090/v1/chat/completions"
+model = "minimax-m3.1-flash"
+temperature = 0.2
+max_completion_tokens = 8000
+prompt_version = 7
+# api_key = "..."  # optional override; prefer env: export OPENAI_API_KEY=...
