@@ -9,7 +9,7 @@ cache = "out/llm_cache.json"
 
 [llm]
 base_url = "http://localhost:8090/v1/chat/completions"
-model = "minimax-m3.1-flash"
+model = "dictionary-model"
 temperature = 0.2
 max_completion_tokens = 8000
 prompt_version = 7

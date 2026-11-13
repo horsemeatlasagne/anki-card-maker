@@ -21,7 +21,9 @@ def extract(db_path: str) -> list[dict]:
     for r in rows:
         prev = (r["prev_context"] or "").strip()
         nxt = (r["next_context"] or "").strip()
-        word = r["word"]
+        # strip: KOReader can store leading whitespace (' aufwühlen'), which
+        # would split one word into two cache keys and two cards.
+        word = r["word"].strip()
         # Reassemble: prev + word + next, like vocabsieve does.
         parts = [p for p in (prev, word, nxt) if p]
         records.append({

@@ -6,6 +6,7 @@ Reference: docs/vendor/openai-chat-completions-create.md + docs/vendor/openai-ch
 import hashlib
 import json
 import os
+import sys
 import time
 import urllib.error
 import urllib.request
@@ -82,7 +83,7 @@ def _validate(obj: dict) -> str | None:
         if not isinstance(m, dict) or not isinstance(m.get("sense"), int) \
                 or not isinstance(m.get("definition"), str) \
                 or not isinstance(m.get("example"), str) \
-                or m.get("example_source") not in ("dict", "none") \
+                or m.get("example_source") not in ("dict", "context", "none") \
                 or not isinstance(m.get("in_context"), bool):
             return "bad meaning entry"
     if not isinstance(obj.get("expressions"), list):
@@ -102,6 +103,7 @@ class Consolidator:
         self.max_tokens = llm_cfg["max_completion_tokens"]
         self.prompt_version = llm_cfg["prompt_version"]
         self.cache_path = llm_cfg.get("cache")
+        self.thinking = llm_cfg.get("thinking", True)
         self.cache = self._load_cache()
 
     def _load_cache(self) -> dict:
@@ -110,7 +112,15 @@ class Consolidator:
         try:
             with open(self.cache_path, encoding="utf-8") as f:
                 return json.load(f)
-        except (FileNotFoundError, json.JSONDecodeError):
+        except FileNotFoundError:
+            return {}
+        except json.JSONDecodeError:
+            # Never silently start from {}: the next _save_cache() would
+            # overwrite a recoverable file. Keep a copy and tell the user.
+            backup = f"{self.cache_path}.corrupt-{int(time.time())}"
+            os.replace(self.cache_path, backup)
+            print(f"WARNING: cache unreadable, moved to {backup}; starting empty",
+                  file=sys.stderr)
             return {}
 
     @staticmethod
@@ -130,12 +140,20 @@ class Consolidator:
     def _save_cache(self) -> None:
         if not self.cache_path:
             return
-        with open(self.cache_path, "w", encoding="utf-8") as f:
+        # Atomic write: a kill mid-dump must not truncate the only cache copy.
+        tmp = f"{self.cache_path}.tmp"
+        with open(tmp, "w", encoding="utf-8") as f:
             json.dump(self.cache, f, ensure_ascii=False, indent=1)
+        os.replace(tmp, self.cache_path)
 
     def _cache_key(self, word: str, entry: str) -> str:
+        # Model is deliberately NOT part of the key: the gateway can swap the
+        # backing model behind a stable model name, so the name cannot reliably
+        # identify the model. Keying on it only meant that changing
+        # config.toml invalidated the whole cache while a gateway-side switch
+        # silently reused it. Delete the cache file to regenerate.
         h = hashlib.sha256()
-        h.update(f"{word}|{entry}|{self.prompt_version}|{self.model}".encode())
+        h.update(f"{word}|{entry}|{self.prompt_version}".encode())
         return h.hexdigest()
 
     def _call(self, messages: list[dict], temperature: float) -> str:
@@ -146,6 +164,12 @@ class Consolidator:
             "max_completion_tokens": self.max_tokens,
             "response_format": {"type": "json_object"},
         }
+        if not self.thinking:
+            # NOTE (docs/session-summary-2026-11-09.md): AxonHub accepts but
+            # has historically IGNORED both fields. Sent anyway so it works
+            # the day the gateway honours them; verify via usage.completion_tokens.
+            body["reasoning_effort"] = "none"
+            body["chat_template_kwargs"] = {"enable_thinking": False}
         headers = {
             "Content-Type": "application/json",
             # gateway 403s non-browser UA strings; full string required
@@ -186,6 +210,9 @@ class Consolidator:
             if stripped.rstrip().endswith("```"):
                 stripped = stripped.rstrip()[:-3]
         return stripped.strip()
+
+    def is_cached(self, word: str, entry: str) -> bool:
+        return self._cache_key(word, entry) in self.cache
 
     def consolidate(self, word: str, entry: str, context: str) -> dict:
         """Return validated card JSON; raises ValueError after one retry."""
