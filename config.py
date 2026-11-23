@@ -17,7 +17,8 @@ _DEFAULTS = {
         "api_key": "",  # prefer env OPENAI_API_KEY, overridden by config if local
         "temperature": 0.2,
         "max_completion_tokens": 4000,
-        "prompt_version": 1,
+        "prompt_version": 7,
+        "rpm": 20,  # LLM requests per minute; 0 disables the cap
     },
 }
 
