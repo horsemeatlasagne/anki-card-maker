@@ -35,10 +35,10 @@ The checked-in configuration contains these settings:
 | `llm` | `model` | Model name sent to the service. |
 | `llm` | `temperature` | Temperature for the first request. A retry uses `0.0`. |
 | `llm` | `max_completion_tokens` | Maximum completion tokens requested. |
-| `llm` | `prompt_version` | Prompt identifier and part of the cache key. The current code defines version `7`. |
+| `llm` | `prompt_version` | Prompt identifier and part of the cache key. The current code defines versions `7` and `8`; the default is `7`. |
 | `llm` | `api_key` | Optional key. A nonempty value takes precedence over `OPENAI_API_KEY`. |
 
-Missing keys use the defaults in `config.py`. The built-in prompt version is `1`, but the current code only defines prompt version `7`. Set `prompt_version = 7` when using an alternate configuration.
+Missing keys use the defaults in `config.py`. The built-in prompt version is `7`. Set `prompt_version = 7` for KOReader runs, or `8` for Quizlet runs, when using an alternate configuration.
 
 The program reads `OPENAI_API_KEY` from the environment. It also reads simple `KEY=value` lines from `.env.local` in the current working directory. Existing environment variables take precedence over that file. This parser does not interpret shell quoting or `export` syntax. Do not commit keys or share them in configuration examples.
 

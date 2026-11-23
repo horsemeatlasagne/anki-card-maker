@@ -38,6 +38,16 @@ Inspect the input before generating cards:
 
 The last command can send dictionary entries and reading context to the configured service. It can also incur service charges. It writes the configured output file and updates the cache. An export replaces the output file, so choose a safe output path first.
 
+## Quizlet input
+
+The default input is a KOReader database. To turn a Quizlet export into German-to-German cards, pass a two-column CSV (German term, French translation):
+
+```sh
+.venv/bin/python main.py export --intype quizlet --infile data/die_physiker.csv
+```
+
+The French column only hints which sense to use; definitions and examples stay German. See [Commands and output](docs/usage.md#input-types).
+
 For CSV import in Anki, select **File → Import** and enable **Allow HTML in fields**. Map the CSV columns to fields in your note type. The first two columns are `term` and `definition`.
 
 ## Documentation
