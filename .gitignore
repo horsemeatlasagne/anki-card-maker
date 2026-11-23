@@ -7,3 +7,5 @@ CLAUDE.md
 __pycache__/
 out/
 docs/vendor/
+# CocoIndex Code (ccc)
+/.cocoindex_code/
